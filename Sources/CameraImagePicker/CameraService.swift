@@ -4,7 +4,15 @@ import AVFoundation
 class CameraService {
     
     var session: AVCaptureSession?
-    var delegate: AVCapturePhotoCaptureDelegate?
+    var delegate: AVCapturePhotoCaptureDelegate? {
+        didSet {
+            if delegate == nil {
+                print("it's now nil")
+            } else {
+                print("it's not nil anymore")
+            }
+        }
+    }
     
     let output = AVCapturePhotoOutput()
     let previewLayer = AVCaptureVideoPreviewLayer()
