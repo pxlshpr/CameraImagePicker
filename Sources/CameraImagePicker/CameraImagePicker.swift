@@ -59,6 +59,7 @@ public struct CameraImagePicker: View {
                             .font(.system(size: 72))
                             .foregroundColor(.white)
                     }
+                    .buttonStyle(.borderless)
                 }
                 .padding(.bottom)
             }
@@ -74,7 +75,9 @@ public struct CameraImagePicker: View {
                         print("Data is nil")
                         return
                     }
-                    self.capturedImage = UIImage(data: data)
+                    DispatchQueue.main.async {
+                        self.capturedImage = UIImage(data: data)
+                    }
                     dismiss()
                 case .failure(let error):
                     print("Error: \(error)")
