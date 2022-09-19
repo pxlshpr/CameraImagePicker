@@ -4,7 +4,11 @@ import AVFoundation
 class CameraService {
     
     var session: AVCaptureSession?
-    var delegate: AVCapturePhotoCaptureDelegate?
+    var delegate: AVCapturePhotoCaptureDelegate? {
+        didSet {
+            print("Delegate was set to: \(delegate)")
+        }
+    }
     
     let output = AVCapturePhotoOutput()
     let previewLayer = AVCaptureVideoPreviewLayer()
