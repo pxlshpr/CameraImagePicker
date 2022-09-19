@@ -77,8 +77,8 @@ public struct CameraImagePicker: View {
                     }
                     DispatchQueue.main.async {
                         self.capturedImage = UIImage(data: data)
+                        dismiss()
                     }
-                    dismiss()
                 case .failure(let error):
                     print("Error: \(error)")
                 }
