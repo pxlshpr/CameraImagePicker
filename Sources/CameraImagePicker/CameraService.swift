@@ -64,6 +64,15 @@ class CameraService {
         guard let delegate = delegate else {
             return
         }
+        NotificationCenter.default.post(name: .willCapturePhoto, object: nil)
+//        self.session?.stopRunning()
+//        DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + 0.) {
+//            self.session?.startRunning()
+//        }
         output.capturePhoto(with: settings, delegate: delegate)
     }
+}
+
+extension Notification.Name {
+    static var willCapturePhoto: Notification.Name { return .init("willCapturePhoto") }
 }
