@@ -5,18 +5,21 @@ public struct CameraImagePicker: View {
 
     @Environment(\.dismiss) var dismiss
     
+    @State var didAppear = false
+    
     let cameraService = CameraService()
     @Binding var capturedImage: UIImage?
-
-    /// This mitigates an issue of the delegate of the `CameraService` being set back to nil when this view is pushed onto a `NavigationStack`. Conditionally toggling the actual camera view in the `onAppear` modifier seems to fix the issue.
-    @State var didAppear = false
-
+    
     @State var selectedPhotos: [PhotosPickerItem] = []
     @State var isPresentingPhotosPicker = false
     
     public init(capturedImage: Binding<UIImage?>) {
         _capturedImage = capturedImage
     }
+}
+
+//MARK: - Body
+extension CameraImagePicker {
     
     public var body: some View {
         Group {
@@ -27,21 +30,18 @@ public struct CameraImagePicker: View {
             }
         }
         .onAppear {
-            didAppear = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1 ) {
+                didAppear = true
+            }
         }
-//        .sheet(isPresented: $isPresentingPhotosPicker) {
-//            PhotosPicker(selection: $selectedPhotos,
-//                         maxSelectionCount: 1,
-//                         matching: .images) {
-//                Image(systemName: "photo.on.rectangle.angled")
-//                    .font(.system(size: 25))
-//                    .foregroundColor(.white)
-//            }
-//        }
     }
-    
+}
+
+//MARK: - Components
+
+extension CameraImagePicker {
     var content: some View {
-        var cameraViewLayer: some View {
+        ZStack {
             CameraView(cameraService: cameraService) { result in
                 switch result {
                 case .success(let photo):
@@ -55,9 +55,7 @@ public struct CameraImagePicker: View {
                     print(error.localizedDescription)
                 }
             }
-        }
-        
-        var buttonLayer: some View {
+            .edgesIgnoringSafeArea(.bottom)
             VStack {
                 Spacer()
                 ZStack {
@@ -84,12 +82,6 @@ public struct CameraImagePicker: View {
                 .padding(.bottom)
             }
         }
-        
-        return ZStack {
-            cameraViewLayer
-                .edgesIgnoringSafeArea(.bottom)
-            buttonLayer
-        }
         .onChange(of: selectedPhotos) { newValue in
             guard let item = newValue.first else {
                 return
@@ -110,5 +102,14 @@ public struct CameraImagePicker: View {
                 }
             }
         }
+//        .sheet(isPresented: $isPresentingPhotosPicker) {
+//            PhotosPicker(selection: $selectedPhotos,
+//                         maxSelectionCount: 1,
+//                         matching: .images) {
+//                Image(systemName: "photo.on.rectangle.angled")
+//                    .font(.system(size: 25))
+//                    .foregroundColor(.white)
+//            }
+//        }
     }
 }
