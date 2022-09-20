@@ -222,7 +222,10 @@ extension CameraImagePicker {
                         group.addTask {
                             let image = try await loadImage(pickerItem: items[index])
                             try Task.checkCancellation()
-                            delegate.didLoadLibraryImage(image, at: index)
+                            
+                            try await MainActor.run {
+                                delegate.didLoadLibraryImage(image, at: index)
+                            }
                         }
                     }
                     
