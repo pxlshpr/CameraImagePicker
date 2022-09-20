@@ -168,14 +168,6 @@ extension CameraImagePicker {
 
 extension CameraImagePicker {
     
-    var mockImage: UIImage? {
-        guard let path = Bundle.module.path(forResource: "image3", ofType: "jpg"),
-              let image = UIImage(contentsOfFile: path) else {
-            return nil
-        }
-        return image
-    }
-    
     func tappedCapture() {
         Haptics.feedback(style: .rigid)
         withAnimation(.easeInOut(duration: 0.4)) {
