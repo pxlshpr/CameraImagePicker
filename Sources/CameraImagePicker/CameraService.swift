@@ -49,7 +49,7 @@ class CameraService: ObservableObject {
                 session.addOutput(output)
             }
             
-            previewLayer.videoGravity = .resizeAspectFill
+            previewLayer.videoGravity = .resize
             previewLayer.session = session
             
             DispatchQueue.global(qos: .userInteractive).async {
