@@ -205,8 +205,7 @@ extension CameraImagePicker {
 //                capturedImages.append(image)
             }
 
-        case .failure(let error):
-            print(error.localizedDescription)
+        case .failure(let error):             print(error.localizedDescription)
         }
     }
 
@@ -223,7 +222,7 @@ extension CameraImagePicker {
                             let image = try await loadImage(pickerItem: items[index])
                             try Task.checkCancellation()
                             
-                            try await MainActor.run {
+                            await MainActor.run {
                                 delegate.didLoadLibraryImage(image, at: index)
                             }
                         }
