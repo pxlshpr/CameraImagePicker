@@ -10,7 +10,7 @@ struct CameraView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
         
         cameraService.start(delegate: context.coordinator) { error in
-            if let error = error {
+            if let error {
                 didFinishProcessingPhoto(.failure(error))
                 return
             }
@@ -40,7 +40,7 @@ struct CameraView: UIViewControllerRepresentable {
         }
         
         func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-            if let error = error {
+            if let error {
                 didFinishProcessingPhoto(.failure(error))
                 return
             }

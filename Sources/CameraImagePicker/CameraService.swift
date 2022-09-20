@@ -1,7 +1,8 @@
 import Foundation
 import AVFoundation
+import Photos
 
-class CameraService {
+class CameraService: ObservableObject {
     
     var session: AVCaptureSession?
     var delegate: AVCapturePhotoCaptureDelegate?
@@ -61,18 +62,9 @@ class CameraService {
     }
     
     func capturePhoto(with settings: AVCapturePhotoSettings = AVCapturePhotoSettings()) {
-        guard let delegate = delegate else {
+        guard let delegate else {
             return
         }
-        NotificationCenter.default.post(name: .willCapturePhoto, object: nil)
-//        self.session?.stopRunning()
-//        DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + 0.) {
-//            self.session?.startRunning()
-//        }
         output.capturePhoto(with: settings, delegate: delegate)
     }
-}
-
-extension Notification.Name {
-    static var willCapturePhoto: Notification.Name { return .init("willCapturePhoto") }
 }
