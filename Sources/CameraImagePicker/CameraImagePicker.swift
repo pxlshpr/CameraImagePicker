@@ -2,29 +2,36 @@ import SwiftUI
 import PhotosUI
 import SwiftHaptics
 
+public protocol CameraImagePickerDelegate {
+    func didCapture(_ image: UIImage) -> ()
+    func didPickLibraryImages(numberOfImagesBeingLoaded: Int) -> ()
+    func didLoadLibraryImage(_ image: UIImage, at index: Int) -> ()
+}
+
 public struct CameraImagePicker: View {
 
     @Environment(\.dismiss) var dismiss
-    @Binding var capturedImages: [UIImage]
     @State var didAppear = false
     @State var selectedPhotos: [PhotosPickerItem] = []
     @State var isPresentingPhotosPicker = false
     @State var animateCameraViewShrinking = false
     @State var makeCameraViewTranslucent = false
     
-    @State var refreshBool = false
+//    @State var refreshBool = false
     
     let cameraService = CameraService()
     
     let presentedInNavigationStack: Bool
     let maxSelectionCount: Int
     
-    @State var imageLoadTask: Task<[Int : UIImage], Error>? = nil
-
-    public init(maxSelectionCount: Int = 1, capturedImages: Binding<[UIImage]>? = nil, presentedInNavigationStack: Bool = false) {
-        _capturedImages = capturedImages ?? .constant([])
-        self.presentedInNavigationStack = presentedInNavigationStack
+    @State var imageLoadTask: Task<Void, Error>? = nil
+    
+    let delegate: CameraImagePickerDelegate
+    
+    public init(maxSelectionCount: Int = 1, presentedInNavigationStack: Bool = false, delegate: CameraImagePickerDelegate) {
         self.maxSelectionCount = maxSelectionCount
+        self.presentedInNavigationStack = presentedInNavigationStack
+        self.delegate = delegate
     }
 }
 
@@ -51,14 +58,14 @@ extension CameraImagePicker {
                 }
             }
         }
-        .onChange(of: capturedImages) { newValue in
-            if capturedImages.count == maxSelectionCount {
-                dismiss()
-            } else if selectedPhotos.isEmpty {
-                /// Only refresh the CameraView if we haven't selected photos so that it doesn't jarringly animate the change
-                refreshBool.toggle()
-            }
-        }
+//        .onChange(of: capturedImages) { newValue in
+//            if capturedImages.count == maxSelectionCount {
+//                dismiss()
+//            } else if selectedPhotos.isEmpty {
+//                /// Only refresh the CameraView if we haven't selected photos so that it doesn't jarringly animate the change
+//                refreshBool.toggle()
+//            }
+//        }
         .onChange(of: selectedPhotos) { newValue in
             selectedPhotosChanged(to: newValue)
             dismiss()
@@ -80,7 +87,7 @@ extension CameraImagePicker {
         CameraView(cameraService: cameraService) { result in
             photoCaptured(in: result)
         }
-        .id(refreshBool)
+//        .id(refreshBool)
         .scaleEffect(animateCameraViewShrinking ? 0.01 : 1, anchor: .bottomTrailing)
         .padding(.bottom, animateCameraViewShrinking ? 15 : 0)
         .padding(.trailing, animateCameraViewShrinking ? 15 : 0)
@@ -125,13 +132,15 @@ extension CameraImagePicker {
                 Button {
                     dismiss()
                 } label: {
-                    Image(systemName: "\(capturedImages.count).square.fill")
+//                    Image(systemName: "\(capturedImages.count).square.fill")
+                    Image(systemName: "\("1").square.fill")
                         .font(.system(size: 25))
                         .foregroundColor(.white)
                 }
             }
             return Group {
-                if !capturedImages.isEmpty {
+                if true {
+//                if !capturedImages.isEmpty {
                     HStack {
                         Spacer()
                         doneButton
@@ -200,7 +209,8 @@ extension CameraImagePicker {
                 guard let image = UIImage(data: data) else {
                     return
                 }
-                capturedImages.append(image)
+                delegate.didCapture(image)
+//                capturedImages.append(image)
             }
 
         case .failure(let error):
@@ -209,93 +219,39 @@ extension CameraImagePicker {
     }
 
     func selectedPhotosChanged(to items: [PhotosPickerItem]) {
+        
+        delegate.didPickLibraryImages(numberOfImagesBeingLoaded: items.count)
+        
         Task {
             imageLoadTask?.cancel()
             imageLoadTask = Task {
-                try await withThrowingTaskGroup(of: (Int, UIImage).self) { group in
+                try await withThrowingTaskGroup(of: (Void).self) { group in
                     for index in items.indices {
                         group.addTask {
                             let image = try await loadImage(pickerItem: items[index])
                             try Task.checkCancellation()
-                            print("Got image at index: \(index)")
-                            return (index, image)
+                            delegate.didLoadLibraryImage(image, at: index)
                         }
                     }
                     
-                    var images: [Int : UIImage] = [:]
-                    print("Waiting for group to complete ⏳")
-                    for try await (index, image) in group {
+                    for try await _ in group {
                         try Task.checkCancellation()
-                        print("Appended image at index: \(index)")
-                        images[index] = image
                     }
                                 
                     try Task.checkCancellation()
-                    print("Returning images")
-                    return images
                 }
             }
-            
-            do {
-                guard let images = try await imageLoadTask?.value else {
-                    return
-                }
-                
-                self.capturedImages = images.map { $0.value }
+        }
+    }
 
-            } catch {
-                print("Error in main task block: \(error)")
-            }
-        }
-        
-//        for item in items {
-//
-//            let task = Task {
-//                do {
-//                    let image = try await loadImage(pickerItem: item)
-//
-//                    await MainActor.run {
-//                        self.capturedImages.append(image)
-//                    }
-//                } catch {
-//                    print("Error: \(error)")
-//                }
-//            }
-//        }
-    }
-    
-    func selectedPhotosChanged_legacy(to items: [PhotosPickerItem]) {
-        
-        for item in items {
-            
-            item.loadTransferable(type: Data.self) { result in
-                switch result {
-                case .success(let data):
-                    guard let data = data else {
-                        print("Data is nil")
-                        return
-                    }
-                    DispatchQueue.main.async {
-                        guard let image = UIImage(data: data) else {
-                            return
-                        }
-                        self.capturedImages.append(image)
-                    }
-                case .failure(let error):
-                    print("Error: \(error)")
-                }
-            }
-        }
-    }
-    
     @Sendable func loadImage(pickerItem: PhotosPickerItem) async throws -> UIImage {
-        if let data = try await pickerItem.loadTransferable(type: Data.self) {
-            guard let image = UIImage(data: data) else {
-                throw PhotoPickerError.image
-            }
-            return image
+        guard let data = try await pickerItem.loadTransferable(type: Data.self) else {
+            throw PhotoPickerError.load
         }
-        throw PhotoPickerError.load
+        guard let image = UIImage(data: data) else {
+            throw PhotoPickerError.image
+        }
+        return image
     }
 }
 
@@ -311,11 +267,31 @@ public struct CameraImagePickerPreview: View {
     
     @State var capturedImages: [UIImage] = []
     
+    @StateObject var viewModel: ViewModel = ViewModel()
+    
     public var body: some View {
-        CameraImagePicker(capturedImages: $capturedImages)
+        CameraImagePicker(maxSelectionCount: 5, delegate: viewModel)
     }
     
     public init() { }
+    
+    class ViewModel: ObservableObject {
+        
+    }
+}
+
+extension CameraImagePickerPreview.ViewModel: CameraImagePickerDelegate {
+    func didCapture(_ image: UIImage) {
+        print("didCapture an image")
+    }
+    
+    func didPickLibraryImages(numberOfImagesBeingLoaded: Int) {
+        print("didPick: \(numberOfImagesBeingLoaded) images")
+    }
+    
+    func didLoadLibraryImage(_ image: UIImage, at index: Int) {
+        print("didLoadLibraryImage: at \(index)")
+    }
 }
 
 struct CameraImagePicker_Previews: PreviewProvider {
