@@ -3,9 +3,9 @@ import PhotosUI
 import SwiftHaptics
 
 public protocol CameraImagePickerDelegate {
-    func didCapture(_ image: UIImage) -> ()
-    func didPickLibraryImages(numberOfImagesBeingLoaded: Int) -> ()
-    func didLoadLibraryImage(_ image: UIImage, at index: Int) -> ()
+    public func didCapture(_ image: UIImage) -> ()
+    public func didPickLibraryImages(numberOfImagesBeingLoaded: Int) -> ()
+    public func didLoadLibraryImage(_ image: UIImage, at index: Int) -> ()
 }
 
 public struct CameraImagePicker: View {
