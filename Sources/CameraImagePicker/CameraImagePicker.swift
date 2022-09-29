@@ -23,6 +23,7 @@ public struct CameraImagePicker: View {
     
     let presentedInNavigationStack: Bool
     let maxSelectionCount: Int
+    @State var numberOfCapturedImages: Int = 0
     
     @State var imageLoadTask: Task<Void, Error>? = nil
     
@@ -133,14 +134,13 @@ extension CameraImagePicker {
                     dismiss()
                 } label: {
 //                    Image(systemName: "\(capturedImages.count).square.fill")
-                    Image(systemName: "\("1").square.fill")
+                    Image(systemName: "\(numberOfCapturedImages).square.fill")
                         .font(.system(size: 25))
                         .foregroundColor(.white)
                 }
             }
             return Group {
-                if true {
-//                if !capturedImages.isEmpty {
+                if numberOfCapturedImages > 0 {
                     HStack {
                         Spacer()
                         doneButton
@@ -202,10 +202,13 @@ extension CameraImagePicker {
                     return
                 }
                 delegate.didCapture(image)
-//                capturedImages.append(image)
+                numberOfCapturedImages += 1
+                if numberOfCapturedImages == maxSelectionCount {
+                    dismiss()
+                }
             }
-
-        case .failure(let error):             print(error.localizedDescription)
+        case .failure(let error):
+            print(error.localizedDescription)
         }
     }
 
