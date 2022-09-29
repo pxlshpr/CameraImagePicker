@@ -48,7 +48,7 @@ class CameraService: NSObject, ObservableObject {
             if session.canAddOutput(output) {
                 session.addOutput(output)
             }
-            session.sessionPreset = .high
+//            session.sessionPreset = .high
             
             previewLayer.videoGravity = .resizeAspectFill
             previewLayer.session = session
