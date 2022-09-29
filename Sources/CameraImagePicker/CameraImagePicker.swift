@@ -16,7 +16,9 @@ public struct CameraImagePicker: View {
     @State var isPresentingPhotosPicker = false
     @State var animateCameraViewShrinking = false
     @State var makeCameraViewTranslucent = false
-    
+   
+    let didCaptureImage = NotificationCenter.default.publisher(for: .didCaptureImage)
+    let didNotCaptureImage = NotificationCenter.default.publisher(for: .didNotCaptureImage)
 //    @State var refreshBool = false
     
     let cameraService = CameraService()
@@ -61,6 +63,8 @@ extension CameraImagePicker {
                 }
             }
         }
+        .onReceive(didCaptureImage, perform: didCaptureImage)
+        .onReceive(didNotCaptureImage, perform: didNotCaptureImage)
 //        .onChange(of: capturedImages) { newValue in
 //            if capturedImages.count == maxSelectionCount {
 //                dismiss()
@@ -193,6 +197,28 @@ extension CameraImagePicker {
 //MARK: - Events
 extension CameraImagePicker {
     
+    func didCaptureImage(notification: Notification) {
+        guard let image = notification.userInfo?[Notification.CameraImagePickerKeys.image] as? UIImage else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            delegate.didCapture(image)
+            numberOfCapturedImages += 1
+            if numberOfCapturedImages == maxSelectionCount {
+                dismiss()
+            }
+        }
+    }
+    
+    func didNotCaptureImage(notification: Notification) {
+        //TODO: Handle errors properly
+        guard let error = notification.userInfo?[Notification.CameraImagePickerKeys.error] as? Error else {
+            return
+        }
+        print(error.localizedDescription)
+    }
+
     func photoCaptured(in result: Result<AVCapturePhoto, Error>) {
         switch result {
         case .success(let photo):
