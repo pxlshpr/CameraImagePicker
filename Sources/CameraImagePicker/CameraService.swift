@@ -42,6 +42,13 @@ class CameraService: NSObject, ObservableObject {
         }
         do {
             let input = try AVCaptureDeviceInput(device: device)
+            
+            if input.device.isFocusModeSupported(.continuousAutoFocus) {
+                try input.device.lockForConfiguration()
+                input.device.focusMode = .continuousAutoFocus
+                input.device.unlockForConfiguration()
+            }
+            
             if session.canAddInput(input) {
                 session.addInput(input)
             }
