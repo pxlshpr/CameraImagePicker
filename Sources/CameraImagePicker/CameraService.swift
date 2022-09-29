@@ -48,6 +48,7 @@ class CameraService: NSObject, ObservableObject {
             if session.canAddOutput(output) {
                 session.addOutput(output)
             }
+            session.sessionPreset = .high
             
             previewLayer.videoGravity = .resizeAspectFill
             previewLayer.session = session
@@ -90,7 +91,7 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
             }
 
             guard let image = UIImage(data: data) else {
-                return
+//                return
             }
             let userInfo = [
                 Notification.CameraImagePickerKeys.image: image,
