@@ -23,14 +23,16 @@ public struct CameraImagePicker: View {
     
     let presentedInNavigationStack: Bool
     let maxSelectionCount: Int
+    let showPhotoPickerButton: Bool
     @State var numberOfCapturedImages: Int = 0
     
     @State var imageLoadTask: Task<Void, Error>? = nil
     
     let delegate: CameraImagePickerDelegate
     
-    public init(maxSelectionCount: Int = 1, presentedInNavigationStack: Bool = false, delegate: CameraImagePickerDelegate) {
+    public init(maxSelectionCount: Int = 1, showPhotoPickerButton: Bool = false, presentedInNavigationStack: Bool = false, delegate: CameraImagePickerDelegate) {
         self.maxSelectionCount = maxSelectionCount
+        self.showPhotoPickerButton = showPhotoPickerButton
         self.presentedInNavigationStack = presentedInNavigationStack
         self.delegate = delegate
     }
@@ -154,7 +156,9 @@ extension CameraImagePicker {
             VStack {
                 Spacer()
                 ZStack {
-                    photoPickerButtonLayer
+                    if showPhotoPickerButton {
+                        photoPickerButtonLayer
+                    }
                     capturePhotoButtonLayer
                     doneButtonLayer
                 }
