@@ -91,7 +91,7 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
             }
 
             guard let image = UIImage(data: data) else {
-//                return
+                return
             }
             let userInfo = [
                 Notification.CameraImagePickerKeys.image: image,
