@@ -89,8 +89,8 @@ extension CameraImagePicker {
     //MARK: - Components
     var content: some View {
         ZStack {
-//            cameraLayer
-            Color.black
+            cameraLayer
+//            Color.black
             buttonsLayer
         }
     }
