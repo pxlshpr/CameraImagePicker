@@ -31,7 +31,7 @@ public struct CameraImagePicker: View {
     
     @State var imageLoadTask: Task<Void, Error>? = nil
     
-    @State var flashMode: AVCaptureDevice.FlashMode = .auto
+    @State var flashMode: AVCaptureDevice.FlashMode = .off
     @State var torchIsOn: Bool = false
 
     let delegate: CameraImagePickerDelegate
