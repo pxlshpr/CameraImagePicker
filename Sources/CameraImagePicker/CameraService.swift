@@ -60,7 +60,7 @@ class CameraService: NSObject, ObservableObject {
             previewLayer.videoGravity = .resizeAspectFill
             previewLayer.session = session
             
-            DispatchQueue.global(qos: .userInteractive).async {
+            DispatchQueue.global(qos: .background).async {
                 session.startRunning()
             }
             self.session = session
