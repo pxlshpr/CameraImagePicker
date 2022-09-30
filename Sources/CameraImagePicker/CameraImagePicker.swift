@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import SwiftHaptics
+import SwiftUISugar
 
 public protocol CameraImagePickerDelegate {
     func didCapture(_ image: UIImage) -> ()
@@ -30,6 +31,9 @@ public struct CameraImagePicker: View {
     
     @State var imageLoadTask: Task<Void, Error>? = nil
     
+    @State var flashMode: AVCaptureDevice.FlashMode = .auto
+    @State var torchIsOn: Bool = false
+
     let delegate: CameraImagePickerDelegate
     
     public init(maxSelectionCount: Int = 1, showPhotoPickerButton: Bool = false, presentedInNavigationStack: Bool = false, delegate: CameraImagePickerDelegate) {
@@ -85,7 +89,8 @@ extension CameraImagePicker {
     //MARK: - Components
     var content: some View {
         ZStack {
-            cameraLayer
+//            cameraLayer
+            Color.black
             buttonsLayer
         }
     }
@@ -119,7 +124,7 @@ extension CameraImagePicker {
                 photoPickerButton
                 Spacer()
             }
-            .padding(.leading, 10)
+            .padding(.leading)
 
         }
         
@@ -155,9 +160,109 @@ extension CameraImagePicker {
                 }
             }
         }
+        
+        var flashButton: some View {
+            Menu {
+                Button("On") {
+                    Haptics.feedback(style: .medium)
+                    withAnimation {
+                        flashMode = .on
+                    }
+                }
+                Button("Off") {
+                    Haptics.feedback(style: .medium)
+                    withAnimation {
+                        flashMode = .off
+                    }
+                }
+                Button("Auto") {
+                    Haptics.feedback(style: .medium)
+                    withAnimation {
+                        flashMode = .auto
+                    }
+                }
+            } label: {
+                Image(systemName: flashMode.systemImage)
+                    .renderingMode(flashMode.renderingMode)
+                    .imageScale(.small)
+                    .font(.system(size: 25))
+                    .foregroundColor(
+                        flashMode.foregroundColor
+                    )
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .foregroundColor(flashMode.backgroundColor)
+                            .opacity(flashMode == .off ? 1.0 : 0.6)
+                    )
+                    .padding(.leading, 9)
+                    .padding(.vertical, 20)
+                    .padding(.trailing, 40)
+                    .background(Color.clear)
+                    .contentShape(Rectangle())
+            } primaryAction: {
+                Haptics.feedback(style: .medium)
+                withAnimation {
+                    if flashMode == .auto || flashMode == .on {
+                        flashMode = .off
+                    } else {
+                        if flashMode == .off {
+                            flashMode = .auto
+                        }
+                    }
+                }
+            }
+        }
+        
+        var torchButton: some View {
+            Button {
+                Haptics.feedback(style: .rigid)
+                withAnimation {
+                    torchIsOn.toggle()
+                }
+                setTorch()
+            } label: {
+                Image(systemName: "flashlight.\(torchIsOn ? "on" : "off").fill")
+                    .imageScale(.small)
+                    .font(.system(size: 25))
+                    .foregroundColor(
+                        torchIsOn
+                        ? .black
+                        : .white
+                    )
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .foregroundColor(
+                                torchIsOn
+                                ? Color(.secondarySystemBackground)
+                                : Color(.systemFill)
+                            )
+                            .opacity(!torchIsOn ? 1.0 : 0.6)
+                    )
+                    .padding(.trailing, 9)
+                    .padding(.vertical, 20)
+                    .padding(.leading, 40)
+                    .background(Color.clear)
+                    .contentShape(Rectangle())
+            }
+            .contentShape(Rectangle())
+        }
+        
+        var flashButtonLayer: some View {
+            HStack {
+                flashButton
+                    .padding(.leading)
+                Spacer()
+                torchButton
+                    .padding(.trailing)
+            }
+        }
     
         return ZStack {
             VStack {
+                flashButtonLayer
+                    .padding(.top)
                 Spacer()
                 ZStack {
                     if showPhotoPickerButton {
@@ -176,6 +281,38 @@ extension CameraImagePicker {
 
 extension CameraImagePicker {
     
+    func setTorch() {
+        guard let device = AVCaptureDevice.default(for: .video) else { return }
+        
+        if device.hasTorch {
+            do {
+                try device.lockForConfiguration()
+                device.torchMode = torchIsOn ? .on : .off
+                device.unlockForConfiguration()
+            } catch {
+                print("Torch could not be used")
+            }
+        } else {
+            print("Torch is not available")
+        }
+    }
+    
+    func getTorch() {
+        guard let device = AVCaptureDevice.default(for: .video),
+              device.hasTorch
+        else {
+            return
+        }
+        
+        do {
+//            try device.lockForConfiguration()
+            torchIsOn = device.torchMode != .off
+//            device.unlockForConfiguration()
+        } catch {
+            print("Torch could not be used")
+        }
+    }
+    
     func tappedCapture() {
         Haptics.feedback(style: .rigid)
         withAnimation(.easeInOut(duration: 0.4)) {
@@ -190,7 +327,12 @@ extension CameraImagePicker {
             }
         }
         
-        cameraService.capturePhoto()
+        let settings = AVCapturePhotoSettings()
+        settings.flashMode = flashMode
+        cameraService.capturePhoto(with: settings)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            self.getTorch()
+        }
     }
 }
 
@@ -325,4 +467,51 @@ struct CameraImagePicker_Previews: PreviewProvider {
     static var previews: some View {
         CameraImagePickerPreview()
     }
+}
+
+extension AVCaptureDevice.FlashMode {
+    var systemImage: String {
+        switch self {
+        case .off:
+            return "bolt.slash.fill"
+        case .on, .auto:
+            return "bolt.fill"
+        @unknown default:
+            return "bolt.slash"
+        }
+    }
+    
+    var renderingMode: Image.TemplateRenderingMode {
+        switch self {
+        case .on:
+            return .original
+        case .off, .auto:
+            return .template
+        @unknown default:
+            return .template
+        }
+    }
+    
+    var backgroundColor: Color {
+        switch self {
+        case .on, .auto:
+            return Color(.systemGroupedBackground)
+        case .off:
+            return Color(.systemFill)
+        @unknown default:
+            return Color.clear
+        }
+    }
+
+    var foregroundColor: Color {
+        switch self {
+        case .on, .auto:
+            return .black
+        case .off:
+            return .white
+        @unknown default:
+            return Color.clear
+        }
+    }
+
 }

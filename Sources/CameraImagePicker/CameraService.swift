@@ -69,7 +69,7 @@ class CameraService: NSObject, ObservableObject {
         }
     }
     
-    func capturePhoto(with settings: AVCapturePhotoSettings = AVCapturePhotoSettings()) {
+    func capturePhoto(with settings: AVCapturePhotoSettings) {
         output.capturePhoto(with: settings, delegate: self)
 //        guard let delegate else {
 //            return
